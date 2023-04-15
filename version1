@@ -1,0 +1,266 @@
+
+from tkinter import *
+from tkinter import messagebox
+from tkinter.tix import *
+import matplotlib.pyplot as plt
+
+
+#variables
+chart_types = []
+chart_values = []
+global total_val
+global risk_score
+
+
+
+#Create an instance of tkinter frame
+window = Tk()
+
+total_val = 0
+risk_score = 0
+
+#Set the geometry
+window.geometry("600x400")
+
+#Create a tooltip
+tip=Balloon(window)
+
+#define variables
+title_var = StringVar()
+type_var = StringVar()
+value_var = IntVar()
+
+
+def undoEquity():
+    msgbox = messagebox.askyesno(title="Warning", message="This erease the last asset entered.  Proceed?")
+    if msgbox == False:
+        return
+    else:
+        global total_val
+        value = chart_values[len(chart_values)-1]
+        del chart_types[len(chart_types)-1]
+        del chart_values[len(chart_values)-1]
+        total_val -= value
+        build_chart(chart_types, chart_values)
+
+
+def addEquityInfo():
+    msgbox = messagebox.askyesno(title="Warning", message="This will open a separate window.  Proceed?")
+    print(msgbox)
+    if msgbox == False:
+        return
+    else:
+        root = Tk()
+        root.geometry("1000x300")
+        T = Text(root, height = 5, width = 100)
+
+        # Create label
+        l = Label(root, text="Add Equity Tutorial")
+        l.config(font=("Courier", 14))
+
+        tutorial = """To add an equity simply fill in the title, class and amount.  Then press "Add equity".
+        This will automatically update the pie chart representing your total asset allocation.
+        If you already own this asset class then the program will simply add that to the total.
+        For even more inormation: https://www.investopedia.com/terms/a/assetclasses.asp#:~:text=Equities%20%28stocks%29%2C%20bonds%20%28fixed-income%20securities%29%2C%20cash%20or%20marketable,classes%20and%2C%20therefore%2C%20the%20most%20quoted%20asset%20classes."""
+
+        # Create button for next text.
+        b1 = Button(root, text="Close", command=root.destroy )
+
+        l.pack()
+        T.pack()
+        b1.pack()
+
+        # Insert The Fact.
+        T.insert(END, tutorial)
+
+        mainloop()
+
+def sellEquityInfo():
+    msgbox = messagebox.askyesno(title="Warning", message="This will open a separate window.  Proceed?")
+    print(msgbox)
+    if msgbox == False:
+        return
+    else:
+        root = Tk()
+        root.geometry("1000x300")
+        T = Text(root, height = 5, width = 100)
+
+        # Create label
+        l = Label(root, text="Sell Equity Tutorial")
+        l.config(font=("Courier", 14))
+
+        tutorial = """This will sell an asset class and update the pie chart.
+        If you attempt to sell more than you currently own then it will give an error.
+        When you sell, the amount sold will be reduced from the equity type and will be converted to cash."""
+
+        # Create button for next text.
+        b1 = Button(root, text="Close", command=root.destroy )
+
+        l.pack()
+        T.pack()
+        b1.pack()
+
+        # Insert The Fact.
+        T.insert(END, tutorial)
+
+        mainloop()
+
+
+#updates total equity and risk scores
+def update_label():
+    total_val_display = Label(text=total_val, font=('calibre', 20, 'bold'))
+    total_val_display.grid(row=7, column=2)
+    risk_score_display = Label(text=risk_score, font=('calibre', 20, 'bold'))
+    risk_score_display.grid(row=8, column=2)
+
+
+#Builds the chart
+def build_chart(chart_types, chart_values):
+    explode = ((0.1,) * len(chart_types))
+    fig1, ax1 = plt.subplots()
+    ax1.pie(chart_values, explode=explode, labels=chart_types, autopct='%1.1f%%', shadow=True, startangle=90)
+    plt.show()
+
+
+#returns the position of a item in an array
+def index_location(ar, item):
+    i = 0
+    while i < len(ar):
+        if ar[i] == item:
+            return i
+        i += 1
+    return "NULL"
+
+#Action for the add equity button
+def add_equity():
+    global total_val
+    equity_title = title_var.get()
+    equity_type = type_var.get()
+    equity_value = value_var.get()
+    index = index_location(chart_types, equity_type)
+    if index != "NULL":
+        chart_values[index] = chart_values[index] + equity_value
+    else:
+        chart_types.append(equity_type)
+        chart_values.append(equity_value)
+    global total_val
+    total_val += equity_value
+    title_var.set("")
+    type_var.set("")
+    value_var.set("")
+    build_chart(chart_types, chart_values)
+
+
+def sell_equity():
+    equity_title = title_var.get()
+    equity_type = type_var.get()
+    equity_value = value_var.get()
+    index = index_location(chart_types, equity_type)
+    if index == "NULL":
+        messagebox.showinfo(title='Equity Not Found', message="Equity type not found. Check spelling and try again.")
+    else:
+        if equity_value == chart_values[index]: #amount sold represents the entire value
+            del chart_values[index]
+            del chart_types[index]
+        elif equity_value > chart_values[index]: #amount sold represents more than the entire value
+            messagebox.showinfo(title='Sell Amount Error', message="Amount entered is more than owned. Check value.")
+        else:
+            chart_values[index] = chart_values[index] - equity_value
+
+        if equity_title != "Cash":
+            print(equity_title)
+            index = index_location(chart_types, "Cash")
+            if index == "NULL":
+                chart_types.append("Cash")
+                chart_values.append(equity_value)
+            else:
+                chart_values[index] = chart_values[index] + equity_value
+        else:
+            global total_val
+            total_val -= equity_value
+        title_var.set("")
+        type_var.set("")
+        value_var.set("")
+        build_chart(chart_types, chart_values)
+
+cur_row = 0
+
+title_label = Label(text="Welcome to your Equity & Risk Program", font=('calibre',20,'bold'))
+title_label.grid(row=cur_row,column=0, columnspan=3)
+cur_row += 1
+
+title_label = Label(text="A Holisitic view of your finances to help you make smart financial decisions!", font=('calibre',10,'bold'))
+title_label.grid(row=cur_row,column=0, columnspan=3)
+cur_row += 1
+
+title_label = Label(text="Building a complete portfolio will take approx. 30 minutes.", font=('calibre',10,'bold'))
+title_label.grid(row=cur_row,column=0, columnspan=3)
+cur_row += 1
+
+#Create label widgets
+title_label = Label(text="Title of Equity", font=('calibre',10,'normal'))
+title_entry = Entry(textvariable = title_var, font=('calibre',10,'normal'))
+title_label.grid(row=cur_row,column=0)
+title_entry.grid(row=cur_row+1,column=0)
+
+type_label = Label(text="Equity Type", font=('calibre',10,'normal'))
+type_entry = Entry(textvariable = type_var, font=('calibre',10,'normal'))
+type_label.grid(row=cur_row,column=1)
+type_entry.grid(row=cur_row+1,column=1)
+
+value_label = Label(text="Value of or in Equity")
+value_entry = Entry(textvariable = value_var, font=('calibre',10,'normal'))
+value_label.grid(row=cur_row,column=2)
+value_entry.grid(row=cur_row+1,column=2)
+cur_row += 2
+
+
+#Add Equity Buttons
+addEquityButton=Button(window, text= "Add Equity", font=('Helvetica bold', 10), command=add_equity)
+addEquityButton.grid(row=cur_row,column=0,pady=20)
+
+addEquityInfoButton=Button(window, text= "More Information", font=('Helvetica bold', 10), command=addEquityInfo)
+addEquityInfoButton.grid(row=cur_row,column=1,pady=20)
+
+undoEquityButton=Button(window, text= "Undo", font=('Helvetica bold', 10), command=undoEquity)
+undoEquityButton.grid(row=cur_row,column=2,pady=20)
+cur_row += 1
+
+
+#Sell Equity Button Widget
+sellEquityButton=Button(window, text= "Sell Equity", font=('Helvetica bold', 10), command=sell_equity)
+sellEquityButton.grid(row=cur_row,column=0,pady=20)
+sellEquityInfoButton=Button(window, text= "More Information", font=('Helvetica bold', 10), command=sellEquityInfo)
+sellEquityInfoButton.grid(row=cur_row,column=1,pady=20)
+cur_row +=1
+
+
+updateLabelButton=Button(window, text= "Update Val & Score", font=('Helvetica bold', 10), command=update_label)
+updateLabelButton.grid(row=cur_row,column=0,pady=20)
+
+total_val_label = Label(text="Total Equity is: ", font=('calibre',20,'bold'))
+total_val_label.grid(row=cur_row,column=1)
+
+cur_row +=1
+
+risk_eval_label = Label(text="Risk_Evaluation", font=('calibre',20,'bold'))
+risk_eval_label.grid(row=cur_row,column=1)
+cur_row +=1
+
+need_help_label = Label(text="Need Help?", font=('calibre',10,'normal'))
+need_help_label.grid(row=cur_row,column=0)
+
+chat_label = Label(text="Click here to chat with a representative.", font=('calibre',10,'normal'))
+chat_label.grid(row=cur_row,column=1, columnspan=2)
+
+#Bind the tooltip with button
+tip.bind_widget(addEquityButton,balloonmsg="Adds an equity class to the total and re-creates the Pie Chart.")
+tip.bind_widget(sellEquityButton,balloonmsg="Sells the equity type and adds the value to cash.")
+tip.bind_widget(updateLabelButton,balloonmsg="New Feature! Now create the financial risk while updating total Equity.")
+
+
+
+
+
+
+window.mainloop()
